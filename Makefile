@@ -13,8 +13,7 @@ ext:
 	bash -l -c 'source ~/.nvm/nvm.sh; nvm install 12; nvm exec 12 env/bin/jupyter labextension install @jupyter-widgets/jupyterlab-manager @deck.gl/jupyter-widget nbdime-jupyterlab;'
 
 lab:
-	bash -l -c 'source env/bin/jupyter lab'
-	# bash -l -c 'source ~/.nvm/nvm.sh; nvm exec 12 env/bin/jupyter lab'
+	bash -l -c 'source ~/.nvm/nvm.sh; nvm exec 12 env/bin/jupyter lab'
 
 clean:
 	find . -name '*.pyc' | xargs rm -r
