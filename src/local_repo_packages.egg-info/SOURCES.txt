@@ -1,0 +1,7 @@
+README.md
+setup.py
+src/local_repo_packages.egg-info/PKG-INFO
+src/local_repo_packages.egg-info/SOURCES.txt
+src/local_repo_packages.egg-info/dependency_links.txt
+src/local_repo_packages.egg-info/not-zip-safe
+src/local_repo_packages.egg-info/top_level.txt
