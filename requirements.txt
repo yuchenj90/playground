@@ -17,8 +17,3 @@ diskcache
 # visualization
 ipywidgets
 pydeck
-
-
-
-# ridiculous H3 hack
-wheels/h3-3.6.1-cp37-cp37m-macosx_10_9_x86_64.whl
