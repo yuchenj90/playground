@@ -5,7 +5,7 @@ from termcolor import colored
 def sudoku_read(filepath):
     # read input and return data that records position of each number
     # data is a list, each element is a list [v, r, c], corresponds to a value v occurred at row r and column c
-    sudokuin = open('data/sudokuin.txt','r')
+    sudokuin = open(filepath,'r')
     l = sudokuin.readlines()
     num = [str(i) for i in range(1,10)]
     data = []
