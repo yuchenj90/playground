@@ -1,7 +1,7 @@
 .PHONY: clean purge lab tunnel ext env
 
 env:
-	virtualenv -p python3 env
+	virtualenv -p python3.8 env
 	env/bin/pip install --upgrade pip
 	env/bin/pip install -r requirements.txt
 	env/bin/pip install -e .
@@ -13,7 +13,7 @@ ext:
 	bash -l -c 'source ~/.nvm/nvm.sh; nvm install 12; nvm exec 12 env/bin/jupyter labextension install @jupyter-widgets/jupyterlab-manager @deck.gl/jupyter-widget nbdime-jupyterlab;'
 
 lab:
-	bash -l -c 'source ~/.nvm/nvm.sh; nvm exec 12 env/bin/jupyter lab'
+	env/bin/jupyter lab
 
 clean:
 	find . -name '*.pyc' | xargs rm -r
