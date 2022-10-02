@@ -1,4 +1,4 @@
-notebook<6
+notebook
 jupyterlab
 nbdime
 
@@ -6,7 +6,7 @@ pytest
 
 #pandas>=1.0rc
 pyarrow
-pandas<1.0
+pandas
 numpy
 scipy
 matplotlib
@@ -15,5 +15,5 @@ toolz
 diskcache
 
 # visualization
-ipywidgets
-pydeck
+#ipywidgets
+#pydeck
