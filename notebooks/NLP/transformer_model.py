@@ -4,7 +4,7 @@ import math
 
 class InputEmbeddings(nn.Module):
     def __init__(self, d_model: int, vocab_size: int):
-        super.__init__()
+        super().__init__()
         self.d_model = d_model
         self.vocab_size = vocab_size
         self.embedding = nn.Embedding(self.vocab_size, self.d_model)
@@ -14,10 +14,10 @@ class InputEmbeddings(nn.Module):
     
 class PositionalEncoding(nn.Module):
     def __init__(self, d_model: int, seq_len: int, dropout: float) -> None:
-        super.__init__()
+        super().__init__()
         self.d_model = d_model
         self.seq_len = seq_len
-        self.dropout = dropout
+        self.dropout = nn.Dropout(dropout)
         
         pe = torch.zeros(seq_len, d_model) # initialize the size of positional encoder
         pos = torch.arange(0, seq_len, dtype=torch.float).unsqueeze(1) # has shape (seq_len, 1)
@@ -37,6 +37,7 @@ class LayerNormalization(nn.Module):
         super().__init__()
         self.alpha = nn.Parameter(torch.ones(1)) # multiply
         self.bias = nn.Parameter(torch.zeros(1)) # add
+        self.eps = eps
         
     def forward(self, x):
         me, std = x.mean(dim=-1, keepdim=True), x.std(dim=-1, keepdim=True)
@@ -51,7 +52,7 @@ class PositionwiseFF(nn.Module):
         
     def forward(self, x):
         # (Batch, seq_len, d_model) --> (Batch, seq_len, d_ff) -> (Batch, seq_len, d_model)
-        return self.linear_2(self.dropout(nn.ReLU(self.linear_1(x))))
+        return self.linear_2(self.dropout(nn.ReLU()(self.linear_1(x))))
     
 class MultiHeadAttention(nn.Module):
     def __init__(self, d_model: int = 512, n_heads: int = 8, dropout: float = 0.1) -> None:
@@ -84,8 +85,8 @@ class MultiHeadAttention(nn.Module):
         v_proj = self.LinearV(v)
         
         q_proj = q_proj.view(q_proj.shape[0], q_proj.shape[1], self.n_heads, self.d_h).transpose(1, 2)  # (batch size, n_heads, seq_len, d_h)
-        k_proj = k_proj.view(q_proj.shape[0], q_proj.shape[1], self.n_heads, self.d_h).transpose(1, 2)
-        v_proj = v_proj.view(q_proj.shape[0], q_proj.shape[1], self.n_heads, self.d_h).transpose(1, 2)
+        k_proj = k_proj.view(k_proj.shape[0], k_proj.shape[1], self.n_heads, self.d_h).transpose(1, 2)
+        v_proj = v_proj.view(v_proj.shape[0], v_proj.shape[1], self.n_heads, self.d_h).transpose(1, 2)
         
         x, self.attention_scores = self.attention(q_proj, k_proj, v_proj, mask, self.dropout)
         x = x.transpose(1,2)  # (Batch size, seq_len, n_heads, d_h) 
@@ -104,7 +105,7 @@ class ResidualConnection(nn.Module):
 class EncoderBlock(nn.Module):
     def __init__(self, selfAttention: MultiHeadAttention, feedForward: PositionwiseFF, dropout: float) -> None:
         super().__init__()
-        self.self_attention = selfAttention
+        self.selfAttention = selfAttention
         self.feedForward = feedForward
         self.residual_connections = nn.ModuleList([ResidualConnection(dropout) for _ in range(2)])
         
@@ -126,7 +127,7 @@ class Encoder(nn.Module):
         return self.norm(x)
     
 class DecoderBlock(nn.Module):
-    def __init__(self, selfAttention: MultiHeadAttention, crossAttention: MultiHeadAttention, feedForward: PositionwiseFF) -> None:
+    def __init__(self, selfAttention: MultiHeadAttention, crossAttention: MultiHeadAttention, feedForward: PositionwiseFF, dropout: float) -> None:
         super().__init__()
         self.selfAttention = selfAttention
         self.crossAttention = crossAttention
@@ -169,7 +170,7 @@ class Transformer(nn.Module):
                  tgt_pos: PositionalEncoding,
                  projection_layer: ProjectionLayer,
                 ) -> None:
-        super.__init__()
+        super().__init__()
         
         self.encoder = encoder
         self.decoder = decoder
@@ -214,7 +215,7 @@ def build_transformer(src_vocab_size: int,
     
     # create encoder and decoder
     encoder = Encoder(nn.ModuleList([EncoderBlock(MultiHeadAttention(d_model, n_heads, dropout), PositionwiseFF(d_model, d_ff, dropout), dropout) for _ in range(n_blocks)]))
-    decoder = Decoder(nn.ModuleList([DecoderBlock(MultiHeadAttention(d_model, n_heads, dropout), MultiHeadAttention(d_model, n_heads, dropout), PositionwiseFF(d_model, d_ff, dropout))
+    decoder = Decoder(nn.ModuleList([DecoderBlock(MultiHeadAttention(d_model, n_heads, dropout), MultiHeadAttention(d_model, n_heads, dropout), PositionwiseFF(d_model, d_ff, dropout), dropout)
                                         for _ in range(n_blocks)
                                     ]))
     projection_layer = ProjectionLayer(d_model, tgt_vocab_size)
