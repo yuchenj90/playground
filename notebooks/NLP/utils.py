@@ -69,3 +69,71 @@ def build_freqs(tweets, ys):
                 freqs[pair] = 1
 
     return freqs
+
+def parse_transcript(transcript):
+    regex_user_group = r'(&&& (user) &&& \(([A-Z0-9:\s-]*)\):)'
+    regex_user = r'&&& user &&& \([A-Z0-9:\s-]*\):'
+    regex_agent_group = r'(\/\/\/ ([A-Za-z\s0-9]+) \/\/\/ \(([A-Z0-9:\s-]*)\):)'
+    regex_agent = r'\/\/\/ [A-Za-z\s0-9]+ \/\/\/ \([A-Z0-9:\s-]*\):'
+    regex_system = r'system \([A-Z0-9:\s-]*\):'
+    # Step 1: get dialog with role, ts, msg
+    dialog = []
+    user_groups = re.findall(regex_user_group, transcript)
+    for i, x in enumerate(re.split(regex_user, transcript)[1:]):
+        agent_groups = re.findall(regex_agent_group, x)
+        for j, msg in enumerate(re.split(regex_agent, x)):
+            if j == 0:  # get user message
+                pos = re.search(regex_system, msg)
+                if pos:
+                    msg = msg[:pos.start()]    
+                dialog.append([user_groups[i][1], user_groups[i][2], msg.strip()])
+            else:  # get agent messages
+                dialog.append([agent_groups[j-1][1], agent_groups[j-1][2], msg.strip()])
+    # Step 2: parse user question, agent first response and agent action
+    user_question = ''
+    agent_first_response = {'msg': '', 'action': ''}
+    agent_first_turn_msgs = ''
+    agent_msgs = []
+    regex_action = r'\n- Agent action to suggested response: (.*)'
+    regex_multiturn = r'\n- Multi-turn SR: (.*)'
+    datestr, ts = None, None
+    for i in range(len(dialog)):
+        conv = dialog[i]
+        if conv[0] == 'user' and len(user_question)==0: 
+            user_question = conv[2]
+            datestr = conv[1][:8]
+            ts = conv[1][:20]
+        if conv[0] != 'user' and 'Suggested response mode: greeting' not in conv[2]:
+            action = re.findall(regex_action, conv[2])
+            multiturn = re.findall(regex_multiturn, conv[2])
+            if action and len(multiturn)>0 and multiturn[0].lower()=='false':
+                agent_first_response['action'] = action[0]
+            agent_first_response['msg'] = re.split(regex_action, conv[2])[0]
+            agent_first_turn_msgs = re.split(regex_action, conv[2])[0]
+            pos = i+1
+            while pos < len(dialog):
+                if dialog[pos][0] != 'user':
+                    agent_first_turn_msgs += ('\n' + dialog[pos][2]) 
+                else:
+                    break
+                pos += 1
+            break
+    for i in range(len(dialog)):
+        conv = dialog[i]
+        if conv[0] != 'user':
+            agent_msgs.append(re.split(regex_action, conv[2])[0])
+            pos = i+1
+            while pos < len(dialog):
+                if dialog[pos][0] != 'user':
+                    agent_msgs.append(dialog[pos][2]) 
+                pos += 1
+
+    res = {'datestr': datestr, 
+           'ts': ts,
+           'user_question': user_question, 
+           'agent_first_msg': agent_msgs[1] if len(agent_msgs)>1 else "", 
+           'agent_action': agent_first_response['action'],
+           'agent_first_turn_msgs': agent_first_turn_msgs,
+           'agent_msgs': agent_msgs,
+           }
+    return dialog, res
