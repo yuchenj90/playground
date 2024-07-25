@@ -15,4 +15,4 @@ scipy
 six
 sklearn
 tensorboard
-torch==1.9
+torch==2.2.0
